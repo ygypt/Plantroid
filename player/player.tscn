@@ -1,0 +1,77 @@
+[gd_scene load_steps=9 format=3 uid="uid://boamw8e1hoysh"]
+
+[ext_resource type="Script" path="res://player/player.gd" id="1_aslad"]
+[ext_resource type="Texture2D" uid="uid://dmeorjnto1pxe" path="res://icon.svg" id="1_ku56a"]
+[ext_resource type="Script" path="res://addons/godot_state_charts/state_chart.gd" id="3_tdbgi"]
+[ext_resource type="Script" path="res://addons/godot_state_charts/parallel_state.gd" id="4_uvhpe"]
+[ext_resource type="Script" path="res://addons/godot_state_charts/compound_state.gd" id="5_kyyy5"]
+[ext_resource type="Script" path="res://addons/godot_state_charts/atomic_state.gd" id="6_hqhww"]
+[ext_resource type="Script" path="res://addons/godot_state_charts/transition.gd" id="7_cj4oh"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_nqpxe"]
+radius = 64.0
+
+[node name="Player" type="CharacterBody2D" node_paths=PackedStringArray("state_chart")]
+script = ExtResource("1_aslad")
+state_chart = NodePath("StateChart")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(0, -64)
+texture = ExtResource("1_ku56a")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -64)
+shape = SubResource("CircleShape2D_nqpxe")
+
+[node name="StateChart" type="Node" parent="."]
+script = ExtResource("3_tdbgi")
+
+[node name="ParallelState" type="Node" parent="StateChart"]
+script = ExtResource("4_uvhpe")
+
+[node name="Actions" type="Node" parent="StateChart/ParallelState"]
+script = ExtResource("5_kyyy5")
+initial_state = NodePath("Idle")
+
+[node name="Idle" type="Node" parent="StateChart/ParallelState/Actions"]
+script = ExtResource("6_hqhww")
+
+[node name="ToJump" type="Node" parent="StateChart/ParallelState/Actions/Idle"]
+script = ExtResource("7_cj4oh")
+to = NodePath("../../Jump")
+event = &"jump"
+delay_in_seconds = "0.0"
+
+[node name="Jump" type="Node" parent="StateChart/ParallelState/Actions"]
+script = ExtResource("6_hqhww")
+
+[node name="ToFall" type="Node" parent="StateChart/ParallelState/Actions/Jump"]
+script = ExtResource("7_cj4oh")
+to = NodePath("../../Idle")
+event = &"fall"
+delay_in_seconds = "0.0"
+
+[node name="ToFallAuto" type="Node" parent="StateChart/ParallelState/Actions/Jump"]
+script = ExtResource("7_cj4oh")
+to = NodePath("../../Fall")
+delay_in_seconds = "0.2"
+
+[node name="Fall" type="Node" parent="StateChart/ParallelState/Actions"]
+script = ExtResource("6_hqhww")
+
+[node name="ToIdle" type="Node" parent="StateChart/ParallelState/Actions/Fall"]
+script = ExtResource("7_cj4oh")
+to = NodePath("../../Idle")
+event = &"land"
+delay_in_seconds = "0.0"
+
+[node name="Animations" type="Node" parent="StateChart/ParallelState"]
+script = ExtResource("5_kyyy5")
+initial_state = NodePath("Idle")
+
+[node name="Idle" type="Node" parent="StateChart/ParallelState/Animations"]
+script = ExtResource("6_hqhww")
+
+[connection signal="state_physics_processing" from="StateChart/ParallelState/Actions/Idle" to="." method="_on_idle_state_physics_processing"]
+[connection signal="state_physics_processing" from="StateChart/ParallelState/Actions/Jump" to="." method="_on_jump_state_physics_processing"]
+[connection signal="state_physics_processing" from="StateChart/ParallelState/Actions/Fall" to="." method="_on_fall_state_physics_processing"]
